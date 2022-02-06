@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html>
+    <head>
+        <title>Visualization of K-means clustering algorithm</title>
+        <style>
+            *{
+                font-family: arial, sans-serif;
+            }
+            .delete{
+                color:red;
+                text-decoration: underline;
+            }
+            table {
+  
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid #dddddd;
+  text-align: left;
+  padding: 5px;
+  width:60px;
+}
+
+tr:nth-child(even) {
+  background-color: #dddddd;
+}
+.float{
+    float:left;
+}
+svg{
+    border:1px solid #000000;
+    width: 440px;
+    height:275px;
+}
+#middle{
+    height:275px;
+}
+#left{
+    height:275px;
+    overflow: scroll;
+}
+#right{
+    height:275px;
+    overflow: scroll;
+}
+        </style>
+        <script>
+            const R=25;
+            var serial=0;
+            var points=[];
+            var centroids=[];
+            var cls=[];
+
+
+
+            
+            const colors=["red","green","blue","yellow","cyan","magenta"];
+            function delrow(id){
+                var x=document.getElementById(id);
+                document.getElementById("xcoord").value=x.children[0].innerText;
+                document.getElementById("ycoord").value=x.children[1].innerText;
+                x.remove();
+            }
+            function doadd(){
+                var xval=parseFloat(document.getElementById("xcoord").value);
+                var yval=parseFloat(document.getElementById("ycoord").value);
+                if(isNaN(xval)){
+                    alert("X is not a number!");
+                    return;
+                }
+                if(isNaN(yval)){
+                    alert("Y is not a number!");
+                    return;
+                }
+                var newrow=document.createElement("tr");
+                newrow.id="row_"+serial;
+                newrow.className="data"
+                var td=document.createElement("td");
+                td.innerText=xval;
+                newrow.appendChild(td);
+                td=document.createElement("td");
+                td.innerText=yval;
+                newrow.appendChild(td);
+                td=document.createElement("td");
+                td.innerHTML="<input type='button' value='delete' class='delete' onclick=delrow('"+newrow.id+"')>";
+                newrow.appendChild(td);
+                document.getElementById("table").appendChild(newrow);
+                serial+=1;
+                doclr();
+            }
+            function doclr(){
+                document.getElementById("xcoord").value="";
+                document.getElementById("ycoord").value="";
+            }
+            function run(){
+                // Validation
+                var k=parseInt(document.getElementById("K").value);
+                if(isNaN(k) || k<1){
+                    alert("K is not a positive integer!");
+                    return;
+                }
+                if(k>6){
+                    alert("K should be no more than 6!");
+                    return;
+                }
+                if(document.getElementById("table").children.length<=1){
+                    
+                    alert("No data points!");
+                    return;
+                }
+                if(document.getElementById("table").children.length-1<k){
+                    
+                    alert("Not enough data points!");
+                    return;
+                }
+                // Interface Preparation
+                document.getElementById("btn1").value="Reset";
+                document.getElementById("btn1").onclick=reset;
+                document.getElementById("btn2").disabled=false;
+                document.getElementById("K").value=k;
+                document.getElementById("doadd").disabled=true;
+                points=[];
+                var qs=document.querySelectorAll(".data");
+                for(i=0;i<qs.length;i++){
+                    var x=parseFloat(qs[i].children[0].innerText);
+                    var y=parseFloat(qs[i].children[1].innerText);
+                    //console.log(x,y);
+                    points.push([x,y]);
+                    //console.log(points);
+                };
+                // Main Loop
+                var randomPoints=[]
+                cls=[]
+                while(randomPoints.length<k){
+                    cand=Math.floor(Math.random()*points.length);
+                    if(!randomPoints.includes(cand)){
+                        randomPoints.push(cand);
+                    }
+                }
+                //console.log(randomPoints);
+                centroids=[]
+                for(i=0;i<randomPoints.length;i++){
+                    centroids.push([points[randomPoints[i]][0], points[randomPoints[i]][1]]);
+                }
+                proc=document.getElementById("proc")
+                while(proc.firstChild){
+                    proc.removeChild(proc.firstChild);
+                }
+                var fst=document.createElement("tr");
+                for(i=0;i<centroids.length;i++){
+                    th=document.createElement("th");
+                    th.innerText=centroids[i][0];
+                    fst.appendChild(th);
+                    th=document.createElement("th");
+                    th.innerText=centroids[i][1];
+                    fst.appendChild(th);
+                }
+                proc.appendChild(fst);
+                
+                for(i=0;i<points.length;i++){
+                    var fst=document.createElement("tr");
+                    for(j=0;j<centroids.length*2;j++){
+                        td=document.createElement("td");
+                    fst.appendChild(td);
+                    }
+                    proc.appendChild(fst);
+                }
+                alert("Random centroids initialized.");
+                //console.log(centroids);
+                //cls=nextloop(points,centroids);
+                //console.log(points,centroids,cls);
+            }
+            function nextloop(points,centroids){
+                    cls=[];
+                    for(i=0;i<points.length;i++){
+                        bestcen=-1;
+                        dist=1e10;
+                        for(j=0;j<centroids.length;j++){
+                            newdist=Math.pow(points[i][0]-centroids[j][0],2)+Math.pow(points[i][1]-centroids[j][1],2);
+                            if(newdist<dist){
+                                dist=newdist;
+                                bestcen=j;
+                            }
+                        }
+                        cls.push(bestcen);
+                    }
+                    //Vis1
+                    proc=document.getElementById("proc")
+                while(proc.firstChild){
+                    proc.removeChild(proc.firstChild);
+                }
+                var fst=document.createElement("tr");
+                for(i=0;i<centroids.length;i++){
+                    th=document.createElement("th");
+                    th.innerText=centroids[i][0].toFixed(4);
+                    fst.appendChild(th);
+                    th=document.createElement("th");
+                    th.innerText=centroids[i][1].toFixed(4);
+                    fst.appendChild(th);
+                }
+                proc.appendChild(fst);
+                
+                for(i=0;i<points.length;i++){
+                    var fst=document.createElement("tr");
+                    for(j=0;j<centroids.length*2;j++){
+                        td=document.createElement("td");
+                    fst.appendChild(td);
+                    }
+                    proc.appendChild(fst);
+                }
+
+                    //
+                    count=[]
+                    for(i=0;i<centroids.length;i++){
+                        centroids[i][0]=0;
+                        centroids[i][1]=0;
+                        count.push(0);
+                    }
+                    for(i=0;i<points.length;i++){
+                        centroids[cls[i]][0]+=points[i][0];
+                        centroids[cls[i]][1]+=points[i][1];
+                        count[cls[i]]+=1;
+                        document.getElementById("proc").children[count[cls[i]]].children[2*cls[i]].innerText=points[i][0].toFixed(4);
+                        document.getElementById("proc").children[count[cls[i]]].children[2*cls[i]+1].innerText=points[i][1].toFixed(4);
+                    }
+                    for(i=0;i<centroids.length;i++){
+                        centroids[i][0]/=count[i];
+                        centroids[i][1]/=count[i];
+                    }
+                    return cls;
+                }
+            function donext(){
+                cls=nextloop(points,centroids);
+                console.log(points,centroids,cls);
+            }
+            function reset(){
+                document.getElementById("doadd").disabled=false;
+                document.getElementById("btn1").value="Run";
+                document.getElementById("btn1").onclick=run;
+                document.getElementById("btn2").disabled=true;
+            }
+        </script>
+        <noscript>Sorry, your browser does not support JavaScript!</noscript>
+    
+    <script async src='/cdn-cgi/bm/cv/669835187/api.js'></script><body>
+        <h1>Visualization of K-means clustering algorithm</h1>
+        <div id="middle">
+            <div id="left" class="float">
+                <table id="table">
+                    <tr>
+                        <th>X</th>
+                        <th>Y</th>
+                        <th>Action</th>
+                    </tr>
+                </table>
+            </div>
+            <div id="right" class="float">
+                <table id="proc"></table>
+            </div>
+        </div>
+        <br>
+        <div>
+            <label for="xcoord">X:</label>
+            <input type="text" name="xcoord" id="xcoord">
+            <label for="xcoord">Y:</label>
+            <input type="text" name="ycoord" id="ycoord">
+            <input type="button" value="Clr" onclick="doclr()" id="clr">
+            <input type="button" value="Add" onclick="doadd()" id="doadd">
+        </div>
+        <br>
+        <div>
+            <label for="K">K:</label>
+            <input type="text" name="K" id="K">
+            <input type="button" value="Run" id="btn1" onclick="run()">
+            <input type="button" value="Next" id="btn2" onclick="donext()" disabled>
+        </div>
+        <div>
+            <p>About K-means:<br>
+                K-means is a method to cluster data points given k clusters.<br>
+                It belongs to unsupervised learning as it does not require named labels.<br>
+                It is simple in natural language, that is:<br>
+                <ul>
+                    <li>Initialize centroids by randomly picking distinct sample points in the dataset.</li>
+                    <li>Loop: Calculate the distances between all points and all centroids one by one.(Can be multithreaded)</li>
+                    <li>Assign all points to their respective closest centroids.</li>
+                    <li>If this assignment is unchanged, the loop breaks.</li>
+                    <li>Re-compute centroids as the mean of points assigned to it.</li>
+                    <li>Back to "Loop"</li>
+                </ul>
+                Versatile as it is, its drawbacks include:
+                <ul>
+                    <li>The number of clusters must be given in advance.</li>
+                    <li>It may break big clusters that seem indivisible to the human eye.</li>
+                    <li>It does not handle data in polar coordinate well, as the distance in this coordinate is differently calculated from the Cartesian coordinate.</li>
+                </ul>
+            </p>
+        </div>
+    <script type="text/javascript">(function(){window['__CF$cv$params']={r:'6d9181103b041a44',m:'VZogdkc_1T8PhfmwjIU8mXYfv9OVVEGzYQHYeqAL5z8-1644120368-0-AVdln4I1PyClYlU8/XmOcA/MxBEOVyXLjr01/ilCxJrsNF/zZMy9PZRKu8tfQhoadD+WPMRhlhAaFYohYqckKWBsImN71lKLpU8IRzsItD8X356UgaeFSHvj2Kuu5X1mJDVS9lO12zrmEyTW6ovMnpA701FvVHX+iw9MsL4YrwDI0ODbUCxlBU1XkoRwdxx+d1ENqRSi5NMbZVno98zq+pY=',s:[0xaf2c7a54b2,0x91a1c4c083],}})();</script><script type="text/javascript">(function(){window['__CF$cv$params']={r:'6d91c56e5e0a8c15',m:'QjGlJpK.17SPkviG3veyBLzRSvND5FUIJOvb7ui3tdk-1644123169-0-AdvrL/188ozqHpr53sGw8r3dpc8WQhtAfoPW91nog3rn41+8XoE3wWJuY6UcV7+kkbThaRgyx3i3srU3alrO09T9/FSBoqVTO+YvxQKWmmEg8uC9JmuZuqxdPj2o46aEc2uMMeO/ZXmE27fKsOkqXF2QPofzk7w5uN9QprssufGcNR2OQxb1LfSelBKTsM7QCZ7a2ogq/FES1nCWm+7zvSo=',s:[0x36ac4ee9ab,0x47c7ea1e47],}})();</script><script type="text/javascript">(function(){window['__CF$cv$params']={r:'6d91ce123e7115bb',m:'2mqkTI_HgUZ2eedehg8HuxCrc12o5kbiaEV33Ah.wwI-1644123522-0-AZiMGEwIBpHtYNOJV6FiwbA6u/b1sJIr87sxXl9Xew236GB1gA4Oaom4VKB1ltsT7yX3GRn8f1HedRHYR0eN/N3PcOvV5s/WOPRclANYjBcsVmfnSadQmZCqbuaCTPkjqt0NeYTn+PBa/UODSGYnbbzczmZxKQG76EeiaFYlSxjj/v+nSF15c67sdJagpyw9668SzC/HtYY/OXLKXflJEOg=',s:[0x79aa4b0bc4,0x13d0ce4fa3],}})();</script><script type="text/javascript">(function(){window['__CF$cv$params']={r:'6d95815a68e08c57',m:'gF2nvFDdfc4r46dERVwoySlfxlgsZb7rdb4wsWpJ9HM-1644162323-0-AZZrs4WAhJPhtaJYgwxzPz1dU5GNLhhiIWWFiSntqJm4USyv4mZTeHuYm8q2uWbhLKAUijex5pwW42jX/Jd6KPKJOFF9YkDav5z5bPMzZFXZGVNZuCsUbPkD1uZQllX5WLcVBiWTHp7zwU5wnsOVKlKakcVHX2LHuhudE0P7Z++h+b4sgX7GgykpznFTX7tWdCQwICmTfpu9LS/NUSlUrvs=',s:[0x6fd7e9c5ae,0xb7955cef5b],}})();</script></body>
+</html>
